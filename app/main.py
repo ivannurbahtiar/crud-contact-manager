@@ -196,7 +196,7 @@ def get_db():
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """Serves the frontend — also used as health check endpoint."""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 
 # ==================== HEALTH CHECK ====================
