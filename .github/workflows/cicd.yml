@@ -9,7 +9,6 @@ env:
   ECR_REPOSITORY: app
   ECS_SERVICE: app-service
   ECS_CLUSTER: app
-  ECS_TASK_DEFINITION: app
   ACCOUNT_ID: 254454736360
 
 jobs:
@@ -34,8 +33,33 @@ jobs:
       run: |
         aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
+        echo "list file and dict"
         ls
 
+        echo "build and push"
         docker build -t app .
-        docker tag app:latest 254454736360.dkr.ecr.us-east-1.amazonaws.com/app:${{ github.sha }}
-        docker push 254454736360.dkr.ecr.us-east-1.amazonaws.com/app:${{ github.sha }}
+        docker tag app:latest ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/app:${{ github.sha }}
+        docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/app:${{ github.sha }}
+
+    - name: Update image in taskdef.json
+      run: |
+        cd .aws
+        sed -i "s|<IMAGE_URI>|${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/app:${{ github.sha }}|g" taskdef.json
+
+    - name: Create taskdef revision
+      run: |
+        aws ecs register-task-definition \
+        --cli-input-json file://.aws/taskdef.json
+
+    - name: Create taskdef revision
+      run: |
+        aws ecs register-task-definition \
+        --cli-input-json file://.aws/taskdef.json
+
+    - name: Update service
+      run: |
+        aws ecs update-service \
+        --cluster ${{ env.ECS_CLUSTER }} \
+        --service ${{ env.ECS_SERVICE }} \
+        --task-definition app \
+        --force-new-deployment
