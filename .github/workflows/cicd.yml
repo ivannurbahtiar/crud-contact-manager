@@ -34,6 +34,8 @@ jobs:
       run: |
         aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
+        ls
+
         docker build -t app .
         docker tag app:latest 254454736360.dkr.ecr.us-east-1.amazonaws.com/app:${{ github.sha }}
         docker push 254454736360.dkr.ecr.us-east-1.amazonaws.com/app:${{ github.sha }}
